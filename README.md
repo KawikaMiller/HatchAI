@@ -73,4 +73,16 @@ This app was extracted from [Claude Buddy](https://github.com/Uplift-Foundation/
 - **An installer, or starting automatically at login.**
 - **A live AI-generated bubble**, end to end in a real published build — the feature is built and tested against a fake CLI, but nobody has actually turned it on and watched a real one arrive yet.
 - **Screenshot tests** (Claude Buddy has these for its own UI; HatchAI doesn't yet).
-- The code currently lives flat at the repository root rather than in organized folders — a cleanup pass is planned.
+
+## Project layout
+
+The folders are for people reading the code. Every file is still in the one flat `HatchAI` namespace, and `HatchAI.csproj` picks the sources up by the SDK's default glob, so moving a file between folders needs no project edits.
+
+- `App/` — startup and process plumbing: `Program`, `Startup`, the Avalonia `App`, the single-instance lock, the crash log, `HatchAISettings`, the macOS window helpers, and `BuddyController`, the orchestrator that wires sessions, creature, ledger, bubbles and windows together.
+- `Creature/` — the buddy itself: taxonomy, genome, the hatch roll, evolution progress, its state, `BuddyStore` (which persists that state into settings), and `BuddySprite`, the pure rasterizer that draws it.
+- `Ledger/` — token counting: reading transcripts for output tokens, and formatting the totals.
+- `Bubbles/` — speech bubbles: when one is raised, the built-in line table, voice profiles, the optional AI-written bubbles (`BubbleText`, `BubbleVoice`, `ClaudeCliBubbleGenerator`), the bubble log, and the bubble window.
+- `Sessions/` — what the sessions are doing: reading Claude Buddy's status files into snapshots, process liveness, turn signals, and turning those into moments, focus and placement.
+- `Transcripts/` — reading Claude Code and Codex transcripts, and finding their config roots and the `claude` binary.
+- `UI/` — the pet window, its card, the sprite control, the tray, and the settings window.
+- `Assets/` — icons. `tests/` — the three test suites and `Tests.sln`.
