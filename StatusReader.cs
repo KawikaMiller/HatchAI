@@ -200,9 +200,7 @@ namespace HatchAI
             try
             {
                 written = File.GetLastWriteTimeUtc(path);
-                using var stream = new FileStream(
-                    path, FileMode.Open, FileAccess.Read,
-                    FileShare.ReadWrite | FileShare.Delete);
+                using var stream = OpenShared(path);
                 status = JsonSerializer.Deserialize<StatusFile>(stream, ReadOptions);
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
@@ -215,6 +213,12 @@ namespace HatchAI
             status.Source = SourceOf(status);
             return new ScanEntry(Path.GetFileNameWithoutExtension(path), status, written);
         }
+
+        // Read-only, and shared for writing and deleting — see ReadFile. Its
+        // own method so a test can hold one open and prove a hook's delete
+        // still goes through.
+        internal static FileStream OpenShared(string path) =>
+            new(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
 
         // Rules 3 to 6 of the plan's table: sessions that are real Claude Code
         // (or Grok) processes with real hooks, but that some app started for

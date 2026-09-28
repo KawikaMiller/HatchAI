@@ -22,4 +22,10 @@ namespace HatchAI.Tests
     public class LogDirCollection
     {
     }
+
+    // StatusReaderTests remembers pids in InternalSessions, a process-wide set.
+    [CollectionDefinition("InternalSessions", DisableParallelization = true)]
+    public class InternalSessionsCollection
+    {
+    }
 }
