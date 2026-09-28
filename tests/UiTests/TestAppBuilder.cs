@@ -1,0 +1,95 @@
+﻿using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Headless;
+using Avalonia.Threading;
+
+[assembly: AvaloniaTestApplication(typeof(HatchAI.Tests.TestAppBuilder))]
+
+// CB-183: one application and one dispatcher for the whole assembly, not a
+// fresh pair per test. Avalonia.Headless.XUnit 12.x defaults to PerTest, and
+// PerTest is what made this suite drop a test from its count on roughly one
+// run in three.
+//
+// The mechanism, read out of Avalonia 12.1.1 itself rather than inferred:
+// PerTest isolation calls Dispatcher.ResetBeforeUnitTests() around every test,
+// which nulls the process-wide `Dispatcher.s_uiThread`. The UIThread getter
+// treats null as "nobody has claimed it yet" and builds a new dispatcher owned
+// by *whichever thread asks next*. Every test here leaves pool threads behind
+// it â€” file watchers, timers, fire-and-forget Task.Run continuations â€” that
+// call Dispatcher.UIThread.Post, and when one of them lands between the reset
+// and the session thread's own setup, it owns the UI thread. The session thread
+// then reaches DefaultRenderLoop.Add while building the next test's Compositor,
+// VerifyAccess throws "The calling thread cannot access this object because a
+// different thread owns it", and xUnit v3 records that as an assembly error in
+// place of the test's result: one fewer test, zero failures, exit 0. It is the
+// same race CB-28 fixed in the app with Startup.ClaimUiThread, recreated before
+// every test by the isolation mode.
+//
+// No test-level fix exists inside PerTest: the reset clears every thread's
+// claim before setup, so there is nothing to claim first, and the victim is
+// whichever test happens to be next â€” which is why it was a different test on
+// every short run. PerAssembly never nulls s_uiThread, so a pool thread asking
+// for it gets the real one and the race has no window left to land in. That
+// matches what TestBootstrap's comment and WarmUpFontManager below already
+// assumed this suite did; UiDispatcherIsolationTests pins it.
+[assembly: AvaloniaTestIsolation(AvaloniaTestIsolationLevel.PerAssembly)]
+
+namespace HatchAI.Tests;
+
+// The real App, not a stand-in built for tests. Confirmed by spike: under
+// HeadlessUnitTestSession, Application.Current.ApplicationLifetime is null,
+// so the guard in App.axaml.cs's OnFrameworkInitializationCompleted â€”
+// `if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)`
+// â€” short-circuits the whole body (mutex, SessionManager.Start(), tray icon,
+// speech engine). Nothing in App ever runs beyond styles being composed.
+public class TestAppBuilder
+{
+    public static AppBuilder BuildAvaloniaApp() =>
+        AppBuilder.Configure<HatchAI.App>()
+            .UseHeadless(new AvaloniaHeadlessPlatformOptions())
+            .AfterSetup(WarmUpFontManager);
+
+    // Every real test failure this suite hit in CI ((KeyNotFoundException:
+    // "fonts:SystemFonts")) traced back to Avalonia.Media.FontManager's
+    // system-font cache â€” a lazily-populated dictionary â€” not finishing its
+    // first-ever population cleanly. Once that first population is broken,
+    // it stays broken: every later Window construction in the same process
+    // throws the same way, which is why one bad run failed as few as 1 of
+    // 28 tests and as many as 27. Neither removing the one place a test
+    // closed a window, nor disabling xUnit's cross-collection parallelism,
+    // stopped it recurring on a real CI runner â€” so this forces the exact
+    // path that throws (building a real Window, which is what populates the
+    // cache) to run exactly once, synchronously, here, before AppBuilder
+    // hands control back to the test host and before any test can race it.
+    // A short retry loop covers the case where the first attempt itself
+    // lands mid-race: once one attempt succeeds, the cache is warm for
+    // the rest of the process.
+    private static void WarmUpFontManager(AppBuilder builder)
+    {
+        Exception? last = null;
+
+        for (var attempt = 0; attempt < 5; attempt++)
+        {
+            try
+            {
+                // Constructing a Window is enough on its own â€” Window's base
+                // constructor chain eagerly builds a CompositingRenderer,
+                // which is what forces FontManager's first population â€” so
+                // nothing further needs to be done with it. Deliberately
+                // never closed: closing a headless Window is a separate,
+                // already-confirmed way to corrupt this same cache (see
+                // SettingsWindowSmokeTest's own comment), and this window is
+                // never shown, so leaking it costs nothing.
+                Dispatcher.UIThread.Invoke(() => { new Window(); });
+                return;
+            }
+            catch (Exception ex)
+            {
+                last = ex;
+            }
+        }
+
+        throw new InvalidOperationException(
+            "FontManager warm-up never succeeded after 5 attempts.", last);
+    }
+}

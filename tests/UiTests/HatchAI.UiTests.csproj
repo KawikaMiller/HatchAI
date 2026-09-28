@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RollForward>LatestMajor</RollForward>
+    <AssemblyName>HatchAI.UiTests</AssemblyName>
+    <RootNamespace>HatchAI.Tests</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <!-- Claude Buddy's UI suite settings, for its reasons: xunit.v3 needs
+         OutputType=Exe and the Microsoft Testing Platform runner, the .NET 10
+         SDK needs TestingPlatformDotnetTestSupport for `dotnet test` to run an
+         MTP project at all, and SelfContained matches HatchAI.csproj so the
+         SDK's self-contained cross-check between the two executables does not
+         fire (NETSDK1151). -->
+    <OutputType>Exe</OutputType>
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    <SelfContained>true</SelfContained>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <!-- Pinned to 17.14.2, as in Claude Buddy: 18.x depends on
+         Microsoft.Testing.Platform 2.x, while xunit.v3 3.2.2 brings the mtp-v1
+         packages, and the mix fails before one test runs. -->
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" Version="17.14.2" />
+    <!-- xUnit v3 3.2.2, forced by Avalonia.Headless.XUnit 12.1.1, which
+         depends on xunit.v3.extensibility.core 3.2.2; 4.0.0 is binary
+         incompatible with it. -->
+    <PackageReference Include="xunit.v3" Version="3.2.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="4.0.0" />
+    <!-- Must match the app's Avalonia major: two majors of
+         Avalonia.Markup.Xaml in one process break every XAML control. -->
+    <PackageReference Include="Avalonia" Version="12.1.1" />
+    <PackageReference Include="Avalonia.Headless" Version="12.1.1" />
+    <PackageReference Include="Avalonia.Headless.XUnit" Version="12.1.1" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\HatchAI.csproj" />
+  </ItemGroup>
+</Project>
