@@ -1,0 +1,71 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:HatchAI"
+        x:Class="HatchAI.BuddyWindow"
+        Title="HatchAI"
+        Width="96" Height="114"
+        SizeToContent="Manual"
+        WindowDecorations="None"
+        TransparencyLevelHint="Transparent"
+        Background="Transparent"
+        Topmost="True"
+        ShowInTaskbar="False"
+        CanResize="False"
+        ShowActivated="False"
+        WindowStartupLocation="Manual">
+
+    <!-- The companion: one pixel pet and its name.
+
+         Flags copied from OrbWindow.axaml, for its reasons: no chrome, never
+         in the taskbar, never takes focus, always on top.
+
+         Root is pinned to 96x114 and anchored top-left rather than left to
+         fill the window, for the reason OrbWindow's Root comment measured:
+         Windows will not make a top-level window narrower than 136 pixels
+         whatever it asks for, so this window is wider than its content there
+         and its size cannot be a layout input. The sprite is 96 — four screen
+         pixels to a sprite pixel — which clears the 39-pixel minimum height
+         on its own and leaves only the width to be inflated.
+
+         Transparent (not null) background so the whole square is hit-testable
+         for drag, click and right-click, not just the painted pixels. -->
+    <Grid x:Name="Root" Background="Transparent"
+          Width="96" Height="114"
+          RowDefinitions="96,18"
+          HorizontalAlignment="Left" VerticalAlignment="Top">
+        <Grid.ContextMenu>
+            <ContextMenu>
+                <MenuItem x:Name="CardItem" Header="Open card" Click="Card_Click"/>
+                <!-- Always listed, and greyed until the rebirth threshold (a
+                     full 10k past the third evolution) rather than hidden: an
+                     offer you can see coming is part of what makes it an
+                     offer. -->
+                <MenuItem x:Name="RebirthItem" Header="Rebirth…" Click="Rebirth_Click"/>
+                <Separator/>
+                <MenuItem x:Name="BubblesItem"
+                          Header="Speech bubbles"
+                          ToggleType="CheckBox"
+                          Click="Bubbles_Click"/>
+                <MenuItem x:Name="HideItem" Header="Hide buddy" Click="Hide_Click"/>
+            </ContextMenu>
+        </Grid.ContextMenu>
+
+        <local:BuddySpriteControl x:Name="Sprite" Grid.Row="0"
+                                  Width="96" Height="96"/>
+
+        <!-- The name, on a pill so it reads over any wallpaper. -->
+        <Border Grid.Row="1"
+                HorizontalAlignment="Center"
+                CornerRadius="7"
+                Background="#B0202024"
+                Padding="6,1"
+                IsHitTestVisible="False">
+            <TextBlock x:Name="NameTag"
+                       FontSize="10.5"
+                       FontWeight="SemiBold"
+                       Foreground="#F2FFFFFF"
+                       MaxWidth="84"
+                       TextTrimming="CharacterEllipsis"/>
+        </Border>
+    </Grid>
+</Window>

@@ -1,0 +1,20 @@
+bin/
+obj/
+Bin/
+Obj/
+dist/
+publish/
+
+.claude/
+
+# Finder metadata.
+.DS_Store
+
+# NTFS alternate data streams ("<file>:<stream>"). ":" is an illegal path
+# character on Windows, so committing one makes the repository impossible to
+# check out there.
+*:*
+
+# dotnet test --results-directory output and coverage reports: local
+# artifacts, never something to commit.
+TestResults/

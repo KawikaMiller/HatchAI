@@ -1,0 +1,18 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="HatchAI.App"
+             Name="HatchAI">
+    <!-- Fluent on every platform. Claude Buddy loads a macOS theme on a Mac,
+         whose ToggleSwitch template crashes; the buddy's own surfaces were
+         never styled against it, and one theme is one less thing to verify.
+
+         Claude Buddy's App.axaml also carries a ToolTip style that strips the
+         tooltip chrome. It is deliberately not ported: on Windows Claude Buddy
+         replaces its whole style set with a bare FluentTheme at startup
+         (App.UseFluentTheme calls Styles.Clear()), so that style never applied
+         there and the buddy's tooltip has always drawn Fluent's own chrome on
+         Windows. Porting it would have changed the Windows look, not kept it. -->
+    <Application.Styles>
+        <FluentTheme />
+    </Application.Styles>
+</Application>

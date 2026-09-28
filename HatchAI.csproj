@@ -1,0 +1,60 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>HatchAI</AssemblyName>
+    <RootNamespace>HatchAI</RootNamespace>
+    <!-- Keep the "-beta" style suffix on Version only: AssemblyVersion and
+         FileVersion must be plain four-part numbers. -->
+    <Version>0.1.0-beta</Version>
+    <AssemblyVersion>0.1.0.0</AssemblyVersion>
+    <FileVersion>0.1.0.0</FileVersion>
+    <Product>HatchAI</Product>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <!-- Run on whatever newer runtime is installed (e.g. .NET 10 SDK only) -->
+    <RollForward>LatestMajor</RollForward>
+    <!-- Single-file, self-contained output when publishing; pick the RID on
+         the command line: dotnet publish -c Release -r win-x64. macOS packaging
+         is a documented follow-up, not part of v1. -->
+    <ApplicationIcon>Assets/HatchAI.ico</ApplicationIcon>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The tray icon and the window icon. -->
+    <AvaloniaResource Include="Assets\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- tests/ has its own projects, and the SDK's default glob would compile
+         them into the app. It is also where the app's own obj/ would be walked
+         into, which shows up as duplicate assembly attributes rather than as
+         anything mentioning tests. -->
+    <Compile Remove="tests\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The test suites reference this project rather than compiling shipped
+         files in, and most of what is worth testing here (StatusReader's
+         rules, the settings root, the buddy's pure logic) is internal. -->
+    <InternalsVisibleTo Include="HatchAI.UnitTests" />
+    <InternalsVisibleTo Include="HatchAI.IntegrationTests" />
+    <InternalsVisibleTo Include="HatchAI.UiTests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 12.1.1, matching Claude Buddy, which the buddy's files were written
+         and tested against. Fluent on every platform: the macOS theme Claude
+         Buddy uses crashes on its ToggleSwitch template, and the buddy's own
+         surfaces do not need it. -->
+    <PackageReference Include="Avalonia" Version="12.1.1" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.1" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.1" />
+  </ItemGroup>
+
+</Project>

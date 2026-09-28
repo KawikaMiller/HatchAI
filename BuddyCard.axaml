@@ -1,0 +1,142 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:HatchAI"
+        x:Class="HatchAI.BuddyCard"
+        Title="HatchAI"
+        Width="280" SizeToContent="Height"
+        WindowDecorations="None"
+        TransparencyLevelHint="Transparent"
+        Background="Transparent"
+        Topmost="True"
+        ShowInTaskbar="False"
+        CanResize="False"
+        ShowActivated="False"
+        WindowStartupLocation="Manual">
+
+    <!-- Everything about the buddy that does not fit on the buddy: stats,
+         personality, how far to the next evolution, the lifetime total and
+         every buddy that came before this one.
+
+         Built the way UsageCard is — the same dark card, the same type sizes
+         and the same muted-label/bright-value pairing — because it opens from
+         the same kind of thing (a small topmost companion) and a second card
+         look would be a second answer to a question the app already answered.
+         ShowActivated stays False for UsageCard's reason: a card that stole
+         focus would interrupt whatever was being typed.
+
+         Width is fixed and the height follows the content, so the history
+         list grows the card downwards rather than squeezing it. -->
+    <Border x:Name="Root" Background="Transparent">
+        <Border CornerRadius="12"
+                Background="#F0202024"
+                BorderBrush="#80FFFFFF"
+                BorderThickness="1.5"
+                Padding="12,10,12,12">
+            <StackPanel Spacing="0">
+
+                <!-- Header: the buddy itself, its name and what it is. -->
+                <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,8">
+                    <local:BuddySpriteControl x:Name="Portrait" Grid.Column="0"
+                                              Width="48" Height="48"
+                                              Margin="0,0,10,0"
+                                              VerticalAlignment="Top"/>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
+                        <TextBlock x:Name="NameText"
+                                   FontSize="14" FontWeight="SemiBold"
+                                   Foreground="#F2FFFFFF"
+                                   TextTrimming="CharacterEllipsis"/>
+                        <TextBlock x:Name="KindText"
+                                   FontSize="11"
+                                   Foreground="#9EFFFFFF"
+                                   TextTrimming="CharacterEllipsis"/>
+                        <TextBlock x:Name="StageText"
+                                   FontSize="11"
+                                   Foreground="#EBFFFFFF"/>
+                    </StackPanel>
+                    <Border x:Name="CloseButton" Grid.Column="2"
+                            Width="20" Height="20"
+                            CornerRadius="5"
+                            Background="Transparent"
+                            VerticalAlignment="Top"
+                            Cursor="Hand">
+                        <TextBlock Text="&#x2715;"
+                                   FontSize="10"
+                                   Foreground="#9EFFFFFF"
+                                   TextAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   IsHitTestVisible="False"/>
+                    </Border>
+                </Grid>
+
+                <TextBlock x:Name="PersonalityText"
+                           FontSize="10.5"
+                           Foreground="#9EFFFFFF"
+                           Margin="0,0,0,8"/>
+
+                <!-- Stats: five labelled bars, filled in from code. -->
+                <StackPanel x:Name="StatRows" Spacing="3" Margin="0,0,0,10"/>
+
+                <!-- Progress to the next evolution or star. -->
+                <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,4">
+                    <TextBlock x:Name="NextText" Grid.Column="0"
+                               FontSize="10.5" Foreground="#9EFFFFFF"
+                               TextTrimming="CharacterEllipsis"/>
+                    <TextBlock x:Name="ProgressText" Grid.Column="1"
+                               FontSize="10.5" FontWeight="SemiBold"
+                               Foreground="#EBFFFFFF"/>
+                </Grid>
+                <Border x:Name="ProgressTrack" Height="6" CornerRadius="3"
+                        Background="#1AFFFFFF" Margin="0,0,0,10">
+                    <Border x:Name="ProgressFill" Height="6" CornerRadius="3"
+                            Background="#FF7FD1AE"
+                            HorizontalAlignment="Left"/>
+                </Border>
+
+                <TextBlock x:Name="LifetimeText"
+                           FontSize="10.5"
+                           Foreground="#EBFFFFFF"
+                           Margin="0,0,0,8"/>
+
+                <!-- Past buddies, oldest first, each as it was retired. -->
+                <TextBlock x:Name="HistoryHeader"
+                           Text="Past buddies"
+                           FontSize="10"
+                           Foreground="#66FFFFFF"
+                           Margin="0,0,0,3"/>
+                <StackPanel x:Name="HistoryRows" Spacing="2" Margin="0,0,0,10"/>
+
+                <!-- The standing rebirth offer, and its confirmation. Colours set here
+                     rather than left to the theme: the card is dark whatever the
+                     system theme is, and a light-theme button on it read as disabled. -->
+                <Button x:Name="RebirthButton"
+                        Content="Rebirth…"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center"
+                        Background="#26FFFFFF"
+                        Foreground="#F2FFFFFF"
+                        FontSize="11.5"/>
+                <Border x:Name="ConfirmPanel"
+                        IsVisible="False"
+                        CornerRadius="8"
+                        Background="#1AFFFFFF"
+                        Padding="10,8">
+                    <StackPanel Spacing="8">
+                        <TextBlock x:Name="ConfirmText"
+                                   FontSize="11"
+                                   Foreground="#EBFFFFFF"
+                                   TextWrapping="Wrap"/>
+                        <StackPanel Orientation="Horizontal" Spacing="8"
+                                    HorizontalAlignment="Right">
+                            <Button x:Name="CancelRebirthButton" Content="Keep"
+                                    Background="#26FFFFFF" Foreground="#F2FFFFFF"
+                                    FontSize="11.5"/>
+                            <Button x:Name="ConfirmRebirthButton" Content="Rebirth"
+                                    Background="#FF3F8F6E" Foreground="#FFFFFFFF"
+                                    FontSize="11.5"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Border>
+    </Border>
+</Window>

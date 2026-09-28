@@ -1,0 +1,57 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="HatchAI.BubbleWindow"
+        Title="HatchAI"
+        Width="220" Height="60"
+        SizeToContent="Manual"
+        WindowDecorations="None"
+        TransparencyLevelHint="Transparent"
+        Background="Transparent"
+        Topmost="True"
+        ShowInTaskbar="False"
+        CanResize="False"
+        ShowActivated="False"
+        WindowStartupLocation="Manual">
+
+    <!-- What the buddy says. A window of its own rather than a ToolTip on
+         the companion: a tooltip opens on hover and this has to open on its
+         own, and a Popup is placed by Avalonia's positioner, whose idea of
+         "above" is exactly the geometry CB-104's flicker came out of. This is
+         placed by BuddyPlacement.Bubble instead, which is pure and tested
+         never to overlap the companion.
+
+         Root is anchored top-left and sized from its own measure, never
+         stretched to the window, for the reason OrbWindow.axaml's Root gives:
+         on Windows the window may be handed more than it asked for.
+
+         Both tails are always laid out and only one is ever opaque, so the
+         bubble is the same height whichever side it lands on — the side is
+         decided from the size, and a size that depended on the side would be
+         a circle. -->
+    <StackPanel x:Name="Root"
+                HorizontalAlignment="Left" VerticalAlignment="Top"
+                MaxWidth="220">
+        <Path x:Name="TailUp"
+              Data="M 0,7 L 6,0 L 12,7 Z"
+              Fill="#F2EAECF0"
+              HorizontalAlignment="Left"
+              Opacity="0"/>
+        <Border x:Name="BubbleBody"
+                Background="#F2EAECF0"
+                CornerRadius="12"
+                Padding="12,8"
+                BoxShadow="0 2 8 0 #30000000">
+            <TextBlock x:Name="BubbleText"
+                       FontSize="12.5"
+                       FontFamily="SF Pro Rounded, .AppleSystemUIFontRounded, Segoe UI, sans-serif"
+                       Foreground="#FF2A2A35"
+                       TextWrapping="Wrap"
+                       LineHeight="17"/>
+        </Border>
+        <Path x:Name="TailDown"
+              Data="M 0,0 L 6,7 L 12,0 Z"
+              Fill="#F2EAECF0"
+              HorizontalAlignment="Left"
+              Opacity="0"/>
+    </StackPanel>
+</Window>
