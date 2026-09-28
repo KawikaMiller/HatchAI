@@ -143,10 +143,10 @@ internal static class HookHarness
             UseShellExecute = false,
             CreateNoWindow = true
         };
-        psi.ArgumentList.Add("/d");
-        psi.ArgumentList.Add("/s");
-        psi.ArgumentList.Add("/c");
-        psi.ArgumentList.Add(commandLine);
+        // Raw, not ArgumentList: ArgumentList would escape the command's own
+        // quotes as \", which cmd.exe does not understand. /s strips exactly
+        // the outer pair and runs the rest verbatim.
+        psi.Arguments = "/d /s /c \"" + commandLine + "\"";
         Sandbox(psi, sandbox);
         return Run(psi, stdin);
     }
