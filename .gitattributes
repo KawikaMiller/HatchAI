@@ -1,0 +1,2 @@
+# The bash scripts are run by bash, which reads a CR as part of the line.
+*.sh text eol=lf

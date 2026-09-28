@@ -24,3 +24,14 @@ public sealed class WindowsFactAttribute : FactAttribute
             Skip = "ps1 hook only runs on Windows";
     }
 }
+
+// The same gate for a theory: the hook and installer tests that run once per
+// PowerShell engine.
+public sealed class WindowsTheoryAttribute : TheoryAttribute
+{
+    public WindowsTheoryAttribute()
+    {
+        if (!OperatingSystem.IsWindows())
+            Skip = "ps1 hook only runs on Windows";
+    }
+}
