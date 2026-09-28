@@ -70,6 +70,8 @@ namespace HatchAI
             _rows.Children.Clear();
             _rows.Children.Add(Heading("Buddy"));
             foreach (var row in BuddyRows()) _rows.Children.Add(row);
+            _rows.Children.Add(Heading("Sessions"));
+            _rows.Children.Add(HooksRow());
             _rows.Children.Add(Heading("Claude Buddy"));
             _rows.Children.Add(ImportRow());
         }
@@ -243,6 +245,89 @@ namespace HatchAI
             }
 
             return row;
+        }
+
+        // ---- session hooks (new in HatchAI) --------------------------------------
+
+        internal const string HooksDescription =
+            "HatchAI sees what your Claude Code, Codex and Grok sessions are doing through a small "
+            + "hook each of them runs. This adds HatchAI's hook to their settings, beside whatever is "
+            + "already there: your other settings, and other tools' hooks (Claude Buddy's included), "
+            + "are left exactly as they are.\n\n"
+            + "Safe to click again. It never adds a second copy, and a CLI that isn't installed is skipped.";
+
+        // Test seams: the install itself, and the line describing what is
+        // installed now. Production runs HookSetup against the real
+        // configuration and reads the real files, neither of which a headless
+        // test may do.
+        internal static Func<Task<HookSetup.Result>>? InstallHooksForTests;
+        internal static Func<string>? HookStateForTests;
+
+        private static string HookState() => HookStateForTests?.Invoke() ?? HookSetup.DescribeThisMachine();
+
+        internal Button? InstallHooksButton { get; private set; }
+        internal TextBlock? HooksState { get; private set; }
+        internal TextBlock? HooksOutcome { get; private set; }
+
+        // No first-run prompt, on purpose: installing edits other programs'
+        // settings, so it happens when the person asks. The row says what is
+        // installed now, including whether Claude Buddy's hooks already cover
+        // this machine, so the state is one click into Settings.
+        private Control HooksRow()
+        {
+            InstallHooksButton = new Button { Content = "Install hooks" };
+            var row = (Grid)Row("Session hooks", InstallHooksButton, HooksDescription);
+
+            HooksState = new TextBlock
+            {
+                Text = HookState(),
+                FontSize = 11,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 6, 0, 0)
+            };
+            HooksOutcome = new TextBlock
+            {
+                FontSize = 11,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 6, 0, 0),
+                IsVisible = false
+            };
+
+            InstallHooksButton.Click += async (_, _) => await InstallHooksAsync();
+
+            row.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+            row.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+            Grid.SetRow(HooksState, 2);
+            Grid.SetColumnSpan(HooksState, 2);
+            row.Children.Add(HooksState);
+            Grid.SetRow(HooksOutcome, 3);
+            Grid.SetColumnSpan(HooksOutcome, 2);
+            row.Children.Add(HooksOutcome);
+            return row;
+        }
+
+        // The button's work: disabled while the installer runs (a second click
+        // would only queue a second, identical run), then the outcome and a
+        // fresh reading of what is installed.
+        internal async Task InstallHooksAsync()
+        {
+            InstallHooksButton!.IsEnabled = false;
+            HooksOutcome!.Text = "Installing…";
+            HooksOutcome.IsVisible = true;
+            try
+            {
+                var result = await (InstallHooksForTests ?? (() => HookSetup.RunAsync()))();
+                HooksOutcome.Text = HookSetup.OutcomeText(result);
+            }
+            catch (Exception ex)
+            {
+                HooksOutcome.Text = HookSetup.OutcomeText(new HookSetup.Result(false, Array.Empty<string>(), ex.Message));
+            }
+            finally
+            {
+                HooksState!.Text = HookState();
+                InstallHooksButton.IsEnabled = true;
+            }
         }
 
         // ---- import (new in HatchAI) --------------------------------------------

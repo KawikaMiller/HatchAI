@@ -36,6 +36,10 @@ internal static class TestBootstrap
 
         Environment.SetEnvironmentVariable("HATCHAI_LOG_DIR", Path.Combine(root, "logs"));
 
+        // Nothing in this suite runs a hook installer; if something ever does,
+        // it inherits this and refuses to write outside it.
+        Environment.SetEnvironmentVariable("HATCHAI_INSTALLER_SANDBOX", Path.Combine(root, "installer-sandbox"));
+
         HatchAISettings.ReloadForTests();
     }
 }

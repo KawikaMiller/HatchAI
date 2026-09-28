@@ -36,6 +36,10 @@ internal static class TestBootstrap
 
         Environment.SetEnvironmentVariable("HATCHAI_LOG_DIR", Path.Combine(root, "logs"));
 
+        // Any installer this process starts inherits this, and refuses to
+        // write outside it. Tests that run one on purpose narrow it further.
+        Environment.SetEnvironmentVariable("HATCHAI_INSTALLER_SANDBOX", Path.Combine(root, "installer-sandbox"));
+
         HatchAISettings.ReloadForTests();
     }
 }

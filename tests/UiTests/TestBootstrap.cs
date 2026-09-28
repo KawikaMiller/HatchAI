@@ -33,6 +33,17 @@ internal static class TestBootstrap
 
         Environment.SetEnvironmentVariable("HATCHAI_LOG_DIR", Path.Combine(root, "logs"));
 
+        // The Settings window's hook row reads the real Claude Code, Codex and
+        // Grok config files to say what is installed, and its button runs the
+        // real installer against them. Neither may happen here: the reading
+        // is replaced by a fixed line, the install by one that fails loudly,
+        // and should anything still reach the real installer, the sandbox
+        // makes it refuse to write outside this run's scratch folder.
+        Environment.SetEnvironmentVariable("HATCHAI_INSTALLER_SANDBOX", Path.Combine(root, "installer-sandbox"));
+        SettingsWindow.HookStateForTests = () => "(hook state is not read in tests)";
+        SettingsWindow.InstallHooksForTests = () =>
+            throw new InvalidOperationException("A UI test reached the real hook installer.");
+
         HatchAISettings.ReloadForTests();
     }
 }

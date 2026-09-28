@@ -31,6 +31,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- HatchAI's own hook script and its installers, embedded so the
+         single-file publish carries them; HookSetup writes them out to a temp
+         folder when the Settings button runs the install. The logical name is
+         fixed so a file's resource name does not depend on the folder's. -->
+    <EmbeddedResource Include="Hooks\*.ps1;Hooks\*.sh" LogicalName="HatchAI.Hooks.%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- tests/ has its own projects, and the SDK's default glob would compile
          them into the app. It is also where the app's own obj/ would be walked
          into, which shows up as duplicate assembly attributes rather than as
