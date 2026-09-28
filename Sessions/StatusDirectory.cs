@@ -7,10 +7,13 @@ namespace HatchAI
     // Where the hooks leave a session's status file, and where Claude Buddy
     // looks for it.
     //
-    // Ported verbatim into HatchAI, which reads the same folder: Claude
-    // Buddy's hooks are what write it, whatever this app is called, so the
-    // folder name stays `claude_buddy` and must never follow a rename. HatchAI
-    // only ever reads here — see StatusReader.
+    // Ported verbatim into HatchAI, which reads the same folder. HatchAI's own
+    // hook (Hooks/HatchAIHook.ps1, a fork of Claude Buddy's) writes here too,
+    // on purpose: one folder means a machine with both apps installed has one
+    // file per session rather than two that could disagree, and the folder
+    // name therefore stays `claude_buddy` and must never follow a rename (see
+    // EXTRACTION-PLAN.md §9.3). The app itself only ever reads here — see
+    // StatusReader.
     //
     // **These have to be the same directory, and on a launchd-started Mac they
     // were not.** The hooks run from the user's shell, where `TMPDIR` is set to

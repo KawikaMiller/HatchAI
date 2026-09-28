@@ -6,7 +6,9 @@ namespace HatchAI
     // and StatusReader's rules use, and nothing else.
     //
     // The file is Claude Buddy's contract, written by ClaudeBuddyHook.sh and
-    // ClaudeBuddyHook.ps1, and the property names below are the hooks' own.
+    // ClaudeBuddyHook.ps1 — and, identically, by HatchAI's own fork of them,
+    // Hooks/HatchAIHook.ps1 and .sh, which exist so HatchAI no longer needs
+    // Claude Buddy installed. The property names below are the hooks' own.
     // Claude Buddy's SessionStatus carries this and thirty app-derived fields
     // beside it (team, presence, kind, colour and so on); none of those is on
     // disk, and none is needed to decide which sessions exist and what state

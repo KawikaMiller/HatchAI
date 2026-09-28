@@ -2,6 +2,8 @@
 
 **NOTE (2026-09-27): "HatchAI" is the current working name, picked so naming exploration doesn't block the build. It may still change later** — every identifier below (`HatchAISettings`, `HATCHAI_SETTINGS_DIR`, the mutex name, the folder names) would need the same mechanical find-and-replace this note itself just went through. The plan itself (files, architecture, risks, decisions) does not change with the name.
 
+**SUPERSEDED IN PART (2026-09-27, later the same day): HatchAI now installs and owns its own hooks.** Everywhere below that says HatchAI reads status files *Claude Buddy's hooks* write, never installs a hook, or does not port the hook scripts and installers (§0, §1d, §2.1), describes the original piggyback design, which is no longer current. What remains true, and is why those sections are kept rather than rewritten: the status-file *format* and *folder* (§2.1, §2.2) are exactly what HatchAI's own hook now writes, because that hook is a verbatim fork of Claude Buddy's. §9 records the change and its reasoning.
+
 **Both open owner decisions from the plan are now settled** (2026-09-27): §2.4 uses rule (B) — a session with a live process never expires from idling alone. §7.5's coexistence detection is skipped for v1 — the owner is fine with a temporary period where both Claude Buddy's in-app buddy and this app run at once, since the plan is to remove the in-app buddy from Claude Buddy entirely once this app is proven.
 
 ---
@@ -27,7 +29,7 @@
 - **Two string literals must NOT be renamed:**
   - The hatch salt `"claude-buddy/hatch/v1"` (BuddyHatch.cs:25). Changing it re-rolls every buddy and breaks the golden tests.
   - `BubbleVoice.WorkDirLeaf = "claudebuddy-bubble-voice"` (BubbleVoice.cs:59). It is now a contract *between the two apps* (§7.3).
-- **Status folder name** stays `claude_buddy`, because that is where the hooks write.
+- **Status folder name** stays `claude_buddy`, because that is where the hooks write. *(Still true now that HatchAI has its own hook — see §9.3.)*
 - **State and settings** go in HatchAI's own file, never Claude Buddy's `settings.json`.
 
 ## 1. File inventory
@@ -117,7 +119,7 @@ Two dependencies the task list did not name:
 
 - **Session and orb infrastructure:** SessionManager (except the pure rules copied into StatusReader), OrbWindow, OrbArrangement, TeamLinks, AgentTeam, BackgroundJobs, SessionPresence, SessionPark, TranscriptHandoff, TranscriptHunts, TerminalFocuser.
 - **Chat and personas:** ChatPanel*, persona files.
-- **Other integrations:** OpenClaw*, Peer*, Remote*, ClaudeCloud*, AccountUsage and the pollers, GlobalHotkeys, TTS/Whisper, ClaudeDesktop*, HookInstaller, hook scripts and snippets.
+- **Other integrations:** OpenClaw*, Peer*, Remote*, ClaudeCloud*, AccountUsage and the pollers, GlobalHotkeys, TTS/Whisper, ClaudeDesktop*, HookInstaller, hook scripts and snippets. *(Superseded for the hook scripts and installers: forked into `Hooks/` — see §9. The README snippets and Claude Buddy's HookInstaller.cs are still not ported; `App/HookSetup.cs` is HatchAI's own, smaller equivalent.)*
 - **Also:** WslIntegration. The ledger does not use it; a WSL transcript path simply fails to open and costs itself (BuddyLedgerScanner.cs:325-338).
 - **Deferred:** MacOSScreenLock and ScreenLockWait (macOS follow-up, §5).
 - **GrokTranscript is not needed.** The ledger ignores Grok (BuddyLedgerScanner.FormatOf :161; BuddyController.cs:342 filters live paths to ClaudeCode or Codex), and LatestUserPrompt returns null for Grok (BubbleText.cs:441).
@@ -413,3 +415,31 @@ With Claude Buddy's `buddyEnabled` true (the default, ClaudeBuddySettings.cs:706
 - K:\Programming\personalProjects\Claude-Buddy-buddy\ClaudeBuddySettings.cs (the buddy keys and the atomic-save pattern)
 - K:\Programming\personalProjects\Claude-Buddy-buddy\StatusDirectory.cs, with ClaudeBuddyHook.sh and ClaudeBuddyHook.ps1 (the status file contract)
 - K:\Programming\personalProjects\Claude-Buddy-buddy\BuddyWindow.axaml.cs and SettingsWindow.cs:763-933
+
+## 9. Owning the hooks (2026-09-27)
+
+Until this change HatchAI read status files that only Claude Buddy's hooks wrote, so it worked only on a machine that also had Claude Buddy installed. The owner asked for HatchAI to be fully standalone.
+
+### 9.1 What was forked
+
+- **The hook:** `Hooks/HatchAIHook.ps1` and `Hooks/HatchAIHook.sh`, from `ClaudeBuddyHook.ps1`/`.sh` at the source HEAD above, **verbatim below a new header**. The status file is the contract §2.2 describes and StatusReader was built against, so the fork writes the same keys to the same folder, and `Sessions/StatusReader.cs` did not change. That includes the auto-colour branch: it only runs when Claude Buddy's own `.auto-color` marker is present (HatchAI never writes it), and keeping it means both hooks write the same colour when it is.
+- **The installers:** `install-windows-hooks.ps1` (Claude Code), `install-codex-hooks.ps1`, `install-grok-hooks.ps1`, and the all-CLIs entry point `install-hooks.ps1`, with their macOS `.sh` twins (ported, never run). The merge they share is in `hatchai-hooks-common.ps1`.
+- **Not forked:** WSL distro wiring, Claude Buddy's crash keep-alive LaunchAgent, and its README JSON snippets.
+
+### 9.2 Merging, not clobbering
+
+The one rule that lets two apps share a settings file is the source's own: an entry is an app's if its command names that app's hook script by filename; strip your own, append fresh. The rename is load-bearing — `HatchAIHook.ps1` vs `ClaudeBuddyHook.ps1` — because it is what makes each installer blind to the other's entries.
+
+The merge itself was *not* copied, because measurement showed the source's could change things that were not its own: its `ConvertTo-HashtableDeep` ended in `return @(...)`, which PowerShell unrolls, so `{"allow":["Bash(ls)"],"deny":[]}` came back as `{"allow":"Bash(ls)","deny":{}}` under 5.1 (`"deny":null` under pwsh). The fork preserves arrays, key order, and any group or event holding none of its entries; serialises at depth 100 rather than 20; writes via a temp file that is parsed back first; and writes nothing when the result is unchanged (which matters for Codex, whose hook trust is keyed on the file's hash). A second source bug, in the Windows Codex installer's untrimmed `-TempDir "...\Temp\"`, was confirmed by running the command line and fixed.
+
+The test that pins this (`HookInstallerTests`) removes HatchAI's entries from the installed file and requires the remainder to deep-equal the original — against a fixture that carries Claude Buddy's real entries. With the source's unrolling put back, it fails on both engines.
+
+### 9.3 Decision: the status folder stays `claude_buddy`
+
+Kept, deliberately. It is an internal name no user sees. Renaming it would touch `StatusDirectory`, the reader's tests, and every hook script, for no user-visible benefit, and it would make a machine with both apps installed write the same session into two folders that could disagree. Keeping it means both apps' hooks write one identical file per session, which either app reads. No collision risk was found that would argue otherwise: the only writers of `*.txt` there are the two hooks, writing the same format.
+
+The cost, named: with both apps' hooks installed, each event runs two hooks that write the same file, so a torn read (already the known hazard in §7.2) is somewhat more likely; the reader already skips a torn read and retries next tick.
+
+### 9.4 The app side
+
+`App/HookSetup.cs` carries the scripts embedded in the executable (HatchAI publishes as a single file), writes them to a temp folder per run, runs `install-hooks.ps1` under Windows PowerShell 5.1, and reports a per-CLI summary. Settings gained a *Sessions → Session hooks* row with the current state and an **Install hooks** button. No first-run prompt: installing edits other programs' settings, so it happens when asked, and on the only machine HatchAI had run on, Claude Buddy's hooks already served it — a prompt there would have been a false alarm. The row names that case explicitly.
