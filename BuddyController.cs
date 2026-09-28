@@ -203,6 +203,11 @@ namespace HatchAI
         private DateTimeOffset _lastSave;
         private bool _unsaved;
 
+        // Bumped by Reload. A ledger round that started before the buddy on
+        // disk was replaced read against the old buddy's cursors, so its answer
+        // must not be applied to the new one.
+        private int _epoch;
+
         private DispatcherTimer? _ledgerTimer;
         private DispatcherTimer? _pumpTimer;
 
@@ -729,13 +734,14 @@ namespace HatchAI
                 var discover = _lastDiscover is null || now - _lastDiscover >= DiscoverEvery;
                 var snapshot = _state;
                 var paths = _livePaths;
+                var epoch = _epoch;
 
                 var scan = await Task.Run(() => _ledger.Scan(snapshot, paths, discover));
                 if (discover) _lastDiscover = now;
 
                 // The buddy may have been turned off, or reborn, while the
                 // files were being read.
-                if (_shown && _state is not null) ApplyScan(scan, now);
+                if (_shown && _state is not null && epoch == _epoch) ApplyScan(scan, now);
             }
             catch (Exception ex)
             {
@@ -842,6 +848,39 @@ namespace HatchAI
             Save(_clock());
             _genome = _rules.Roll(reborn.Uuid, reborn.Rebirths);
             _view.Show(_genome, reborn);
+        }
+
+        // The buddy on disk was replaced from outside the controller — Settings'
+        // import from Claude Buddy (HatchAI, not in Claude Buddy's original). Forget
+        // the buddy held in memory without saving it, so its next save cannot
+        // write the old buddy straight back over the imported one, and load the
+        // new one the way a launch would. A line in flight or held for later was
+        // about the old buddy and is dropped; a ledger round still reading is
+        // ignored when it lands (see _epoch). Whatever the old buddy earned and
+        // had not saved yet is discarded on purpose: it is being replaced.
+        internal void Reload()
+        {
+            _epoch++;
+            if (_flight is { } flight)
+            {
+                Cancel(flight);
+                RecordFlight(flight, BubbleOutcome.Dropped, BubbleLogReason.Superseded);
+            }
+            if (_pending is { } held)
+            {
+                _pending = null;
+                Record(held, BubbleOutcome.Dropped, BubbleLogReason.Superseded);
+            }
+
+            _state = null;
+            _genome = null;
+            _unsaved = false;
+            _bubbleHideAt = null;
+            _view.HideBubble();
+
+            if (!_shown) return;
+            EnsureBuddy();
+            _view.Show(_genome!, _state!);
         }
 
         // Quit: the last chance to write what the last rounds earned. A crash

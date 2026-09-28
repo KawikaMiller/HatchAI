@@ -354,6 +354,11 @@ namespace HatchAI
             if (!on) _bubble?.Dismiss();
         }
 
+        // The tray's "Speech bubbles" flips the same preference; this keeps
+        // the buddy menu's check in step with it (HatchAI; Claude Buddy had no
+        // second place to flip it from).
+        internal void UpdateBubblesCheck() => BubblesItem.IsChecked = HatchAISettings.BuddyBubblesEnabled;
+
         private void Hide_Click(object? sender, RoutedEventArgs e)
         {
             HatchAISettings.BuddyEnabled = false;
