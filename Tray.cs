@@ -160,12 +160,17 @@ namespace HatchAI
 
         public void Dispose()
         {
-            if (_icon is not null)
-            {
-                _icon.IsVisible = false;
-                _icon.Dispose();
-            }
+            if (_icon is not null) RemoveIcon(_icon);
             if (ReferenceEquals(Instance, this)) Instance = null;
+        }
+
+        // Excluded from coverage for CreateIcon's reason: there is only an icon
+        // to remove where there is a notification area to have put it in.
+        [ExcludeFromCodeCoverage]
+        private static void RemoveIcon(TrayIcon icon)
+        {
+            icon.IsVisible = false;
+            icon.Dispose();
         }
     }
 }
