@@ -89,6 +89,12 @@ namespace HatchAI
                 // Development entry point, kept from Claude Buddy:
                 // `HatchAI --settings` opens the settings window at launch.
                 if (desktop.Args?.Contains("--settings") == true) SettingsWindow.Toggle();
+
+                // Its sibling for the card: `HatchAI --card` opens the buddy's card
+                // at launch (when the buddy is shown), so the card — and the
+                // rebirth offer on it — can be checked without a click on the
+                // buddy itself.
+                if (desktop.Args?.Contains("--card") == true) window.OpenCard();
             }
 
             base.OnFrameworkInitializationCompleted();
